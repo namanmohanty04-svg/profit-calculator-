@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Break-Even Calculator</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 480px;
+    margin: 40px auto;
+    padding: 0 20px;
+    color: #1a1a1a;
+    background: #fafafa;
+  }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  p.subtitle { color: #666; font-size: 14px; margin-top: 0; margin-bottom: 24px; }
+  label { font-size: 13px; color: #555; display: block; margin-bottom: 4px; margin-top: 16px; }
+  input[type="number"] {
+    width: 100%; padding: 10px 12px; font-size: 15px;
+    border: 1px solid #ddd; border-radius: 8px; background: white;
+  }
+  input[type="number"]:focus { outline: none; border-color: #378ADD; }
+  input[type="range"] { width: 100%; }
+  .error { color: #c0392b; font-size: 13px; margin-top: 8px; display: none; }
+  .results { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 28px; }
+  .card { background: white; border: 1px solid #eee; border-radius: 10px; padding: 14px 10px; text-align: center; }
+  .card.highlight { background: #E6F1FB; border-color: #B5D4F4; }
+  .card p.label { font-size: 11px; color: #666; margin: 0 0 6px; }
+  .card p.value { font-size: 20px; font-weight: 600; margin: 0; }
+  .progress-wrap { margin-top: 20px; }
+  .progress-labels { display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-bottom: 4px; }
+  .progress-bg { background: #eee; border-radius: 999px; height: 8px; overflow: hidden; }
+  .progress-bar { background: #378ADD; height: 100%; width: 0%; border-radius: 999px; transition: width 0.15s; }
+  .sold-out { font-size: 13px; color: #666; margin-top: 6px; }
+  footer { margin-top: 40px; text-align: center; font-size: 12px; color: #999; }
+</style>
+</head>
+<body>
+
+<h1>Break-even calculator</h1>
+<p class="subtitle">Find out how many sales it takes to cover your startup costs.</p>
+
+<label for="startup">One-time startup costs ($)</label>
+<input type="number" id="startup" value="150" min="0" step="1">
+
+<label for="price">Sale price per unit ($)</label>
+<input type="number" id="price" value="25" min="0" step="0.01">
+
+<label for="unitcost">Cost per unit (product + shipping + fees) ($)</label>
+<input type="number" id="unitcost" value="12.50" min="0" step="0.01">
+
+<div class="error" id="err"></div>
+
+<div class="results">
+  <div class="card">
+    <p class="label">Profit per unit</p>
+    <p class="value" id="out-margin">$0.00</p>
+  </div>
+  <div class="card highlight">
+    <p class="label">Units to break even</p>
+    <p class="value" id="out-units">0</p>
+  </div>
+</div>
+
+<div class="progress-wrap">
+  <div class="progress-labels">
+    <span>Progress</span>
+    <span id="out-progress-label">0 of 0 units</span>
+  </div>
+  <div class="progress-bg"><div class="progress-bar" id="progress-bar"></div></div>
+</div>
+
+<label for="sold">Units sold so far</label>
+<input type="range" id="sold" min="0" max="50" value="0" step="1">
+<p class="sold-out" id="sold-out">0 units sold</p>
+
+<footer>Made with a free tool &mdash; build your own at anthropic.com/claude</footer>
+
+<script>
+function calc() {
+  const startup = parseFloat(document.getElementById('startup').value);
+  const price = parseFloat(document.getElementById('price').value);
+  const unitcost = parseFloat(document.getElementById('unitcost').value);
+  const err = document.getElementById('err');
+
+  if ([startup, price, unitcost].some(v => isNaN(v) || v < 0)) {
+    err.textContent = 'Enter valid non-negative numbers in every field.';
+    err.style.display = 'block';
+    return;
+  }
+  const profitPerUnit = price - unitcost;
+  if (profitPerUnit <= 0) {
+    err.textContent = 'Sale price must be higher than cost per unit to ever break even.';
+    err.style.display = 'block';
+    document.getElementById('out-margin').textContent = '$' + profitPerUnit.toFixed(2);
+    document.getElementById('out-units').textContent = 'Never';
+    return;
+  }
+  err.style.display = 'none';
+
+  const unitsToBreakEven = Math.ceil(startup / profitPerUnit);
+  document.getElementById('out-margin').textContent = '$' + profitPerUnit.toFixed(2);
+  document.getElementById('out-units').textContent = unitsToBreakEven;
+
+  const soldSlider = document.getElementById('sold');
+  soldSlider.max = Math.max(unitsToBreakEven * 2, 10);
+  const sold = parseInt(soldSlider.value);
+  const pct = Math.min(100, (sold / unitsToBreakEven) * 100);
+  document.getElementById('progress-bar').style.width = pct.toFixed(0) + '%';
+  document.getElementById('out-progress-label').textContent = sold + ' of ' + unitsToBreakEven + ' units';
+  document.getElementById('sold-out').textContent = sold + ' units sold';
+}
+
+['startup','price','unitcost','sold'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calc);
+});
+calc();
+</script>
+
+</body>
+</html>
